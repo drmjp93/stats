@@ -441,26 +441,25 @@ function fmtTs(ts){
 let saveTimeout = null;
 
 async function load() {
-  updateSyncStatus('syncing'); // <--- ADD HERE
+  updateSyncStatus('syncing');
   try {
-    const res = await fetch(WORKER_URL);
+    // Add the headers section here!
+    const res = await fetch(WORKER_URL, {
+      headers: { "X-Secret-Key": "DrMJP_Secure_2026" }
+    });
     if (res.ok) {
       db = await res.json();
       localStorage.setItem(STORE, JSON.stringify(db));
       lastSyncTime = Date.now();
-      updateSyncStatus('success'); // <--- ADD HERE
-    } else {
-      throw new Error("Cloud fetch failed");
-    }
+      updateSyncStatus('success');
+    } else throw new Error();
   } catch (err) {
-    console.error(err);
     db = JSON.parse(localStorage.getItem(STORE) || '{}');
-    updateSyncStatus('error'); // <--- ADD HERE
+    updateSyncStatus('error');
   }
-  document.getElementById('hdrSub').textContent = fmtFull(active);
-  buildDateBar();
-  renderList();
+  buildAll();
 }
+
 
 
 function persist() {
@@ -470,12 +469,12 @@ function persist() {
   saveTimeout = setTimeout(async () => {
     updateSyncStatus('syncing');
     try {
-      // Send data ONLY to Cloudflare, but attach a hidden header with the active date
       const res = await fetch(WORKER_URL, { 
         method: "POST", 
         headers: { 
           "Content-Type": "application/json",
-          "X-Active-Date": active // <--- Tells Cloudflare exactly which date to forward to Google
+          "X-Active-Date": active,
+          "X-Secret-Key": "DrMJP_Secure_2026" // <-- Add the key here too!
         }, 
         body: JSON.stringify(db) 
       });
@@ -488,6 +487,7 @@ function persist() {
     saveTimeout = null;
   }, 1500); 
 }
+
 
 
 
