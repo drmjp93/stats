@@ -443,7 +443,6 @@ let saveTimeout = null;
 async function load() {
   updateSyncStatus('syncing');
   try {
-    // Add the headers section here!
     const res = await fetch(WORKER_URL, {
       headers: { "X-Secret-Key": "DrMJP_Secure_2026" }
     });
@@ -457,9 +456,11 @@ async function load() {
     db = JSON.parse(localStorage.getItem(STORE) || '{}');
     updateSyncStatus('error');
   }
-  buildAll();
+  // ← was: buildAll() which doesn't exist
+  document.getElementById('hdrSub').textContent = fmtFull(active);
+  buildDateBar();
+  renderList();
 }
-
 
 
 function persist() {
@@ -934,7 +935,9 @@ async function silentSync() {
   updateSyncStatus('syncing');
 
   try {
-    const res = await fetch(WORKER_URL);
+    const res = await fetch(WORKER_URL, {
+  headers: { "X-Secret-Key": "DrMJP_Secure_2026" }
+});
     if (res.ok) {
       const cloudData = await res.json();
       
