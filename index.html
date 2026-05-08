@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OPD STATS">
+<title>OPD STATS</title>
+
+<!-- Browser Favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%23007AFF'/><text x='50%25' y='53%25' font-size='220' font-weight='bold' font-family='sans-serif' fill='%23FFFFFF' text-anchor='middle' dominant-baseline='middle'>OPD</text></svg>">
+
+<!-- Apple Touch Icon Fallback (NOTE: You MUST use a PNG here for iOS to recognize it) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%23007AFF'/><text x='50%25' y='53%25' font-size='220' font-weight='bold' font-family='sans-serif' fill='%23FFFFFF' text-anchor='middle' dominant-baseline='middle'>OPD</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent:   #FF0000;
+  --green:    #30D158;
+  --red:      #FF0000; 
+  --orange:   #FF9F0A;
+  --bg:       #000000;
+  --card-bg:  #141414;
+  --card-nav: #000000;
+  --card2:    #1F1F1F;
+  --sep:      rgba(255,255,255,0.08);
+  --t1:       #FFFFFF;
+  --t2:       #A1A1A6;
+  --t3:       #636366;
+  --blur:     blur(24px);
+  --safe-t:   env(safe-area-inset-top, 0px);
+  --safe-b:   env(safe-area-inset-bottom, 0px);
+  --hh:       68px; 
+}
+html { height: 100%; background: var(--bg); }
+body {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  background: var(--bg); 
+  color: var(--t1);
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+.hdr{
+position:fixed;top:0;left:0;right:0;z-index:100;
+padding-top:var(--safe-t);
+background:var(--card-nav);
+backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+border-bottom:1px solid var(--sep);
+}
+.hdr-inner{
+height:var(--hh);
+display:flex;align-items:center;
+padding:0 12px 0 16px;
+gap: 12px;
+}
+.hdr-left {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.hdr-left h1{font-size:16px;font-weight:700;letter-spacing:-.3px;}
+.hdr-left p{font-size:11px;color:var(--t3);margin-top:1px;}
+.hdr-v-sep {
+  width: 1px;
+  height: 32px;
+  background: var(--sep);
+  flex-shrink: 0;
+}
+.datebar{
+flex: 1;
+display:flex;gap:6px;overflow-x:auto;
+scrollbar-width:none;
+align-items: center;
+height: 100%;
+mask-image: linear-gradient(to right, transparent, black 3%, black 97%, transparent);
+-webkit-mask-image: linear-gradient(to right, transparent, black 3%, black 97%, transparent);
+}
+.datebar::-webkit-scrollbar{display:none;}
+.dchip{
+flex-shrink:0;display:flex;flex-direction:column;align-items:center;
+padding:6px 14px;border-radius:20px;
+border:1px solid transparent;background:var(--card2);
+cursor:pointer;transition:all .15s;min-width:60px;
+}
+.dchip.active{background:var(--accent);border-color:var(--accent);}
+.dchip .dl{font-size:12px;font-weight:600;color:var(--t1);}
+.dchip.active .dl,.dchip.active .dn{color:#fff;}
+.dchip .dn{font-size:10px;color:var(--t3);margin-top:1px;}
+.dchip:active{transform:scale(.92);}
+.hdr-right{
+  flex-shrink: 0;
+}
+.ico-btn{
+width:34px;height:34px;border-radius:50%;
+background:var(--card2);border:1px solid var(--sep);
+display:flex;align-items:center;justify-content:center;
+font-size:16px;cursor:pointer;
+transition:transform .12s;
+}
+.ico-btn:active{transform:scale(.88);}
+.scroll{
+padding-top:calc(var(--safe-t) + var(--hh) + 16px);
+padding-bottom:calc(var(--safe-b) + 24px);
+padding-left:0;
+padding-right:0;
+}
+.ui-card {
+  background: var(--card-bg);
+  margin-bottom: 6px;
+  border: none !important;
+  box-shadow: none !important;
+}
+.row-wrap{position:relative;overflow:hidden;isolation:isolate;}
+.ui-card .row-wrap:not(:last-child) .stat-row::after {
+  content: ''; position: absolute;
+  bottom: 0; left: 48px; right: 0; height: 1px;
+  background: var(--sep); z-index: 2;
+}
+.ui-card .row-wrap.sub-wrap:not(:last-child) .stat-row::after {
+  left: 56px; 
+}
+.row-acts{
+position:absolute;right:0;top:0;bottom:0;
+display:flex;align-items:stretch;
+width:120px;
+}
+.ra{
+display:flex;align-items:center;justify-content:center;
+flex:1;font-size:13px;font-weight:700;
+cursor:pointer;border:none;color:#fff;white-space:nowrap;
+}
+.ra-dec{background:var(--red);}
+.ra-rst{background:var(--t3);}
+.stat-row{
+position:relative;z-index:1;
+display:flex;align-items:center;
+padding:0 16px;height:52px;
+background: var(--card-bg);
+cursor:pointer;
+touch-action:pan-y;
+will-change:transform;
+}
+.stat-row.pressing { 
+  background: var(--card2);
+}
+.stat-row.sub.pressing { 
+  background: var(--card2);
+}
+.stat-row.fl-inc{background:#0A3A6B;}
+.stat-row.fl-dec{background:#4A1A18;}
+
+@media (prefers-color-scheme: light){
+.stat-row.fl-inc{background:#D0E8FF;}
+.stat-row.fl-dec{background:#FFD5D3;}
+}
+.stat-row.sub {
+height: 46px;
+padding-left: 56px;
+background: var(--card-bg);
+}
+.stat-row.sub .rico { margin-right: 8px; }
+.stat-row.sub .rlbl { font-size: 13px; color: var(--t2); }
+.stat-row.sub .rval { font-size: 18px; }
+.stat-row.sub .rdot { width: 6px; height: 6px; margin-right: 8px; }
+.stat-row.sub .rprog { left: 56px; }
+.rdot{
+width:9px;height:9px;border-radius:50%;
+flex-shrink:0;margin-right:12px;
+}
+.rico{display:flex;align-items:center;margin-right:12px;flex-shrink:0;line-height:1;}
+.rlbl{flex:1;font-size:15px;font-weight:500;color:var(--t1);display:flex;flex-direction:column;justify-content:center;}
+.rts{display:block;font-size:10px;color:var(--t3);font-family:'DM Mono',monospace;font-weight:400;margin-top:1px;letter-spacing:0.2px;}
+.rval{
+font-size:24px;font-weight:700;
+font-family:'DM Mono',monospace;
+color:var(--t1);letter-spacing:-.5px;
+min-width:38px;text-align:right;
+}
+.rval.bump{animation:bump .18s ease;}
+@keyframes slideUpFade {
+from { opacity: 0; transform: translateY(12px); }
+to { opacity: 1; transform: translateY(0); }
+}
+.row-wrap {
+animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+@keyframes pop {
+0% { transform: scale(1); }
+40% { transform: scale(1.35); color: var(--accent); }
+100% { transform: scale(1); }
+}
+.rval.bump {
+animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.rprog{
+position:absolute;bottom:0;left:48px;right:0;height:2px;
+background:transparent;overflow:hidden;
+}
+.rprog-f{
+height:100%;
+border-radius:1px;
+width: 0%;
+transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lpr{
+position:absolute;right:52px;top:50%;transform:translateY(-50%);
+width:26px;height:26px;border-radius:50%;
+opacity:0;transition:opacity .08s;pointer-events:none;
+}
+.lpr svg{position:absolute;inset:0;width:100%;height:100%;}
+.lpr circle{
+stroke:var(--red);stroke-width:2.5;fill:none;
+stroke-dasharray:69.1;stroke-dashoffset:69.1;
+stroke-linecap:round;
+transform:rotate(-90deg);transform-origin:center;
+}
+.lpr.active{opacity:1;}
+.lpr.filling circle{
+transition:stroke-dashoffset .5s linear;
+stroke-dashoffset:0;
+}
+.overlay{
+position:fixed;inset:0;z-index:200;
+background:rgba(0,0,0,.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+opacity:0;pointer-events:none;transition:opacity .22s;
+}
+.overlay.open{opacity:1;pointer-events:all;}
+.sheet{
+position:fixed;bottom:0;left:0;right:0;z-index:201;
+background:var(--bg);
+border-radius:22px 22px 0 0;
+max-height:92dvh;overflow-y:auto;
+padding-bottom:var(--safe-b);
+transform:translateY(100%);
+transition:transform .3s cubic-bezier(.32,.72,0,1);
+}
+.sheet.open{transform:translateY(0);}
+.sh-handle{width:36px;height:4px;border-radius:2px;background:var(--t3);margin:12px auto 0;opacity:.35;}
+.sh-title{font-size:20px;font-weight:700;padding:14px 18px 2px;}
+.sh-sub{font-size:12px;color:var(--t3);padding:0 18px 10px;}
+.sh-top {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding-right: 18px;
+}
+.sh-close {
+width: 32px;
+height: 32px;
+border-radius: 50%;
+background: var(--card2);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 14px;
+font-weight: bold;
+color: var(--t1);
+cursor: pointer;
+margin-top: 6px;
+}
+.sh-close:active {
+transform: scale(0.88);
+}
+.mrow{display:flex;gap:6px;overflow-x:auto;padding:0 18px 12px;scrollbar-width:none;}
+.mrow::-webkit-scrollbar{display:none;}
+.mchip{
+flex-shrink:0;padding:5px 14px;border-radius:20px;
+font-size:12px;font-weight:600;
+border:1.5px solid var(--sep);background:var(--card2);color:var(--t2);cursor:pointer;
+}
+.mchip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.twrap{overflow-x:auto;padding:0 10px 16px;}
+table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:'DM Mono',monospace;}
+th{
+background:var(--card2);color:var(--t3);
+font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+padding:7px 6px;text-align:center;
+position:sticky;top:0;border-bottom:1px solid var(--sep);white-space:nowrap;
+}
+th:first-child{text-align:left;}
+td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--sep);color:var(--t2);}
+td:first-child{text-align:left;font-weight:600;color:var(--t1);font-size:11px;white-space:nowrap;}
+tr:last-child td{border-bottom:none;}
+tr.tr-today td{background:rgba(0,122,255,.08);color:var(--accent);font-weight:700;}
+tr.tr-tot td{background:var(--card2);font-weight:700;color:var(--t1);border-top:2px solid var(--accent);}
+.z{color:var(--sep)!important;}
+.toast{
+position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);
+z-index:400;background:rgba(20,20,20,.93);color:#fff;
+padding:9px 18px;border-radius:24px;font-size:13px;font-weight:500;
+opacity:0;transition:all .22s;pointer-events:none;white-space:nowrap;
+backdrop-filter:var(--blur);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+
+
+
+/* SYNC STATUS BAR */
+.sync-status { 
+  display: flex;
+  align-items: center; 
+  justify-content: center; 
+  gap: 6px; 
+  font-size: 10px; 
+  font-weight: 900; 
+  color: var(--t3);
+  margin: 4px auto 0px auto; 
+  text-transform: uppercase; 
+  letter-spacing: 3px;
+}
+
+#syncText {
+  transform: translateY(-9px);
+}
+.sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--t3);
+  transition: background 0.3s;
+  transform: translateY(-9px);
+}
+.sync-dot.online { background: var(--green); }
+.sync-dot.error { background: var(--red); }
+.sync-dot.syncing { 
+  background: var(--orange); 
+  animation: pulse 0.8s infinite alternate; 
+}
+@keyframes pulse { 
+  from { opacity: 0.4; } 
+  to { opacity: 1; } 
+}
+
+
+</style>
+
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-left">
+      <h1>OPD <span style="color: var(--accent);">STATS</span></h1>
+      <p id="hdrSub">Today</p>
+    </div>
+    <div class="hdr-v-sep"></div>
+    <div class="datebar" id="dateBar"></div>
+    <div class="hdr-right">
+      <div class="ico-btn" onclick="openSheet()">📊</div>
+    </div>
+  </div>
+</header>
+
+<main class="scroll">
+  <!-- ADD THIS SLIM ROW -->
+  <div class="sync-status" id="syncStatus">
+    <span class="sync-dot" id="syncDot"></span>
+    <span id="syncText">Waiting to sync...</span>
+  </div>
+  <!-- EXISTING LIST -->
+  <div id="listGroup"></div> 
+</main>
+
+
+<div class="overlay" id="overlay" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sh-handle" onclick="closeSheet()"></div>
+  <div class="sh-top">
+    <div class="sh-text">
+      <div class="sh-title" id="shTitle">Monthly Overview</div>
+      <div class="sh-sub">Tap any row to open that date for editing</div>
+    </div>
+    <div class="sh-close" onclick="closeSheet()">✕</div>
+  </div>
+  <div class="mrow" id="mPicker"></div>
+  <div class="twrap">
+    <table><thead id="tHead"></thead><tbody id="tBody"></tbody></table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────
+const CATS = [
+  { id:'opd',       label:'OPD Cases',    icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#007AFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5.5" r="2.5"/><path d="M4.5 15c0-2.5 2-4.5 4.5-4.5s4.5 2 4.5 4.5"/><line x1="7" y1="5.5" x2="11" y2="5.5"/><line x1="9" y1="3.5" x2="9" y2="7.5"/></svg>`, color:'#007AFF' },
+  { id:'dm',        label:'DM',           icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#FF3B30" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2C9 2 4.5 7 4.5 10.5a4.5 4.5 0 0 0 9 0C13.5 7 9 2 9 2z"/><line x1="7" y1="11" x2="11" y2="11"/></svg>`, color:'#FF3B30', isSub: true, parent: 'opd' },
+  { id:'thyroid',   label:'Thyroid',      icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#FF9500" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4C6.5 4 5 5.8 5 8c0 1.2.5 2.3 1.4 3.1L7 12h4l.6-.9C12.5 10.3 13 9.2 13 8c0-2.2-1.5-4-4-4z"/><line x1="7" y1="12" x2="6.5" y2="15"/><line x1="11" y1="12" x2="11.5" y2="15"/><line x1="6" y1="8" x2="12" y2="8"/></svg>`, color:'#FF9500', isSub: true, parent: 'opd' },
+  { id:'cardiac',   label:'Cardiac',      icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#FF2D55" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14.5C9 14.5 3 10.5 3 6.5a3.5 3.5 0 0 1 6-2.4 3.5 3.5 0 0 1 6 2.4c0 4-6 8-6 8z"/></svg>`, color:'#FF2D55', isSub: true, parent: 'opd' },
+  { id:'admission', label:'Admission',    icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#5856D6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="9" width="14" height="7" rx="1.5"/><path d="M5 9V7a4 4 0 0 1 8 0v2"/><circle cx="9" cy="5.8" r="1.5" fill="#5856D6" stroke="none"/><line x1="7" y1="13" x2="11" y2="13"/></svg>`, color:'#5856D6' },
+  { id:'discharge', label:'Discharge',    icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#30D158" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 3.5H15v11h-4.5"/><polyline points="7,12.5 3,9 7,5.5"/><line x1="3" y1="9" x2="12" y2="9"/></svg>`, color:'#30D158' },
+  { id:'echo',      label:'Echo',         icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#FF453A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,10 3,10 5,5 7,14 9,7 11,10 13,10"/><path d="M4 13.5C5.2 15.5 7 16.5 9 16.5s3.8-1 5-3"/></svg>`, color:'#FF453A' },
+  { id:'fitness',   label:'Fitness Cert', icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#34C759" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="2" width="11" height="14" rx="2"/><polyline points="6,9 8,11 12,7"/><line x1="6" y1="13.5" x2="12" y2="13.5"/><line x1="6" y1="5" x2="12" y2="5"/></svg>`, color:'#34C759' },
+  { id:'ecg',       label:'ECG',          icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#FF9F0A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,11 4,11 6,4 8,16 10,8 12,11 17,11"/></svg>`, color:'#FF9F0A' },
+  { id:'xray',      label:'X-Ray',        icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#64D2FF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="1.5" width="12" height="15" rx="1.5"/><path d="M7 5.5C7 5.5 9 4.5 11 5.5"/><path d="M7 5.5L8.5 8 7 11.5"/><path d="M11 5.5L9.5 8 11 11.5"/><line x1="6.5" y1="8" x2="11.5" y2="8"/><line x1="6" y1="13.5" x2="12" y2="13.5"/></svg>`, color:'#64D2FF' },
+  { id:'daycare',   label:'Day Care',     icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#BF5AF2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V5a3 3 0 0 1 6 0v2"/><circle cx="13.5" cy="4" r="2.5"/><line x1="13.5" y1="2.8" x2="13.5" y2="4"/><line x1="13.5" y1="4" x2="14.8" y2="4.8"/></svg>`, color:'#BF5AF2' },
+  { id:'usg',       label:'USG',          icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#FF6B35" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 14Q3.5 9 5 4"/><path d="M7.5 15Q5.5 9 7.5 3"/><path d="M10.5 15Q12.5 9 10.5 3"/><path d="M13 14Q14.5 9 13 4"/></svg>`, color:'#FF6B35' },
+  { id:'referral',  label:'Referral',     icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#32ADE6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="14" x2="14" y2="4"/><polyline points="7,4 14,4 14,11"/></svg>`, color:'#32ADE6' },
+  { id:'procedure', label:'Procedure',    icon:`<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="#AC8E68" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="15" x2="11" y2="7"/><path d="M11 7l2.5-2.5 1.5 1.5L12.5 8.5z"/><line x1="9.5" y1="8.5" x2="12" y2="6"/><line x1="3" y1="15" x2="5.5" y2="15"/></svg>`, color:'#AC8E68' },
+];
+const STORE = 'drstat_v2';
+const NDAYS = 10;
+const WORKER_URL = "https://opd-api.drmjp93.workers.dev";
+
+// ── STATE ───────────────────────────────────────
+let db = {};
+let active = todayStr();
+let activeMonth = monthOf(todayStr());
+let swipedId = null;
+
+// ── UTILS ───────────────────────────────────────
+function todayStr(){
+  const d=new Date();
+  return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+}
+function p2(n){return String(n).padStart(2,'0');}
+function monthOf(ds){return ds.slice(0,7);}
+function parseDs(ds){const[y,m,d]=ds.split('-').map(Number);return new Date(y,m-1,d);}
+function fmtFull(ds){
+  if(ds===todayStr()) return 'Today · '+parseDs(ds).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  return parseDs(ds).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
+}
+function fmtMonth(ym){
+  const[y,m]=ym.split('-');
+  return new Date(y,m-1,1).toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+}
+function fmtTs(ts){
+  if(!ts) return '';
+  const d=new Date(ts);
+  return d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+}
+
+// ── DB ────────────────────────────────────────────
+let saveTimeout = null;
+
+async function load() {
+  updateSyncStatus('syncing'); // <--- ADD HERE
+  try {
+    const res = await fetch(WORKER_URL);
+    if (res.ok) {
+      db = await res.json();
+      localStorage.setItem(STORE, JSON.stringify(db));
+      lastSyncTime = Date.now();
+      updateSyncStatus('success'); // <--- ADD HERE
+    } else {
+      throw new Error("Cloud fetch failed");
+    }
+  } catch (err) {
+    console.error(err);
+    db = JSON.parse(localStorage.getItem(STORE) || '{}');
+    updateSyncStatus('error'); // <--- ADD HERE
+  }
+  document.getElementById('hdrSub').textContent = fmtFull(active);
+  buildDateBar();
+  renderList();
+}
+
+
+function persist() {
+  localStorage.setItem(STORE, JSON.stringify(db));
+  clearTimeout(saveTimeout);
+  
+  saveTimeout = setTimeout(async () => {
+    updateSyncStatus('syncing');
+    try {
+      // Send data ONLY to Cloudflare, but attach a hidden header with the active date
+      const res = await fetch(WORKER_URL, { 
+        method: "POST", 
+        headers: { 
+          "Content-Type": "application/json",
+          "X-Active-Date": active // <--- Tells Cloudflare exactly which date to forward to Google
+        }, 
+        body: JSON.stringify(db) 
+      });
+
+      if(res.ok) updateSyncStatus('success'); else throw new Error();
+    } catch { 
+      updateSyncStatus('error'); 
+      showToast("⚠️ Cloud sync failed"); 
+    }
+    saveTimeout = null;
+  }, 1500); 
+}
+
+
+
+
+function getDay(ds){return db[ds]?{...db[ds]}:Object.fromEntries(CATS.map(c=>[c.id,0]));}
+function daySum(ds){const d=getDay(ds);return CATS.reduce((s,c)=>s+(d[c.id]||0),0);}
+
+// ── FIXED: Only calculate Max based on Categories, ignoring the _ts object ──
+function globalMax(){
+  let m=1;
+  Object.values(db).forEach(day => {
+    CATS.forEach(c => {
+      if((day[c.id] || 0) > m) m = day[c.id];
+    });
+  });
+  return m;
+}
+
+// ── DATE BAR ────────────────────────────────────
+function buildDateBar(){
+  const bar=document.getElementById('dateBar');
+  bar.innerHTML='';
+  const t=todayStr();
+  for(let i=NDAYS-1;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const ds=`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+    const isToday=ds===t;
+    const ch=document.createElement('div');
+    ch.className='dchip'+(ds===active?' active':'');
+    const tot=daySum(ds);
+    const topLbl=isToday?'Today':parseDs(ds).toLocaleDateString('en-IN',{weekday:'short'});
+    const botLbl=isToday?'':parseDs(ds).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    ch.innerHTML=`<span class="dl">${topLbl}</span><span class="dn">${botLbl||(tot>0?tot:'—')}</span>`;
+    ch.onclick=()=>selectDate(ds);
+    bar.appendChild(ch);
+  }
+  setTimeout(() => {
+    const activeChip = bar.querySelector('.dchip.active');
+    if (activeChip) {
+      activeChip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, 50);
+}
+
+function selectDate(ds){
+  active=ds;
+  buildDateBar();
+  renderList();
+  document.getElementById('hdrSub').textContent=fmtFull(ds);
+}
+
+// ── RENDER LIST ──────────────────────────────────
+function renderList(){
+  const grp=document.getElementById('listGroup');
+  grp.innerHTML='';
+  const data=getDay(active);
+  const mx=globalMax();
+
+  let currentCard = null;
+
+  CATS.forEach((cat, index)=>{
+    const val=data[cat.id]||0;
+    const ts=data._ts?.[cat.id]||null;
+    
+    if (!cat.isSub) {
+      currentCard = document.createElement('div');
+      currentCard.className = 'ui-card';
+      grp.appendChild(currentCard);
+    }
+
+    const wrap=document.createElement('div');
+    wrap.className = 'row-wrap' + (cat.isSub ? ' sub-wrap' : '');
+    wrap.id='wrap-'+cat.id;
+    wrap.style.animationDelay = `${index * 0.03}s`;
+
+    const acts=document.createElement('div');
+    acts.className='row-acts';
+    acts.innerHTML=
+      `<button class="ra ra-dec" onpointerdown="e=>{e.stopPropagation()}" onclick="decrement('${cat.id}')">−1</button>`+
+      `<button class="ra ra-rst" onclick="resetCat('${cat.id}')">Reset</button>`;
+    wrap.appendChild(acts);
+
+    const row=document.createElement('div');
+    row.className='stat-row' + (cat.isSub ? ' sub' : '');
+    row.id='row-'+cat.id;
+    row.innerHTML=
+      `<div class="rdot" style="background:${cat.color}"></div>`+
+      `<div class="rico">${cat.icon}</div>`+
+      `<div class="rlbl">${cat.label}<span class="rts" id="ts-${cat.id}">${ts?fmtTs(ts):''}</span></div>`+
+      `<div class="rval" id="val-${cat.id}">${val||0}</div>`+
+      `<div class="lpr" id="ring-${cat.id}"><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="11"/></svg></div>`+
+      `<div class="rprog"><div class="rprog-f" id="prog-${cat.id}" style="background:${cat.color};width:0%"></div></div>`;
+
+    attachGestures(row, cat.id);
+    wrap.appendChild(row);
+    
+    if (currentCard) {
+      currentCard.appendChild(wrap);
+    }
+
+    setTimeout(() => {
+      const progBar = document.getElementById(`prog-${cat.id}`);
+      if (progBar) {
+        progBar.style.width = `${mx > 0 ? (val / mx) * 100 : 0}%`;
+      }
+    }, 50);
+  });
+
+  updateBanner();
+}
+
+// ── GESTURES ────────────────────────────────────
+function attachGestures(row, id){
+  let lpTimer=null, lpFired=false;
+  let x0=0, y0=0;
+  let isSwiping=false, isScrolling=false;
+  let curTx=0, isOpen=false;
+  
+  // NEW: Safety lock to prevent hover-swiping on desktop
+  let isPointerDown = false; 
+
+  row.addEventListener('pointerdown', e=>{
+    if(e.pointerType==='mouse'&&e.button!==0) return;
+    
+    isPointerDown = true; // Lock engaged: User is clicking/touching
+    row.setPointerCapture(e.pointerId); // Forces the browser to track the mouse even if it slips off the row
+    
+    x0=e.clientX; y0=e.clientY;
+    isSwiping = false; 
+    isScrolling = false; 
+    lpFired = false;
+
+    if(swipedId && swipedId!==id) snapClose(swipedId);
+
+    row.classList.add('pressing');
+    const ring=document.getElementById('ring-'+id);
+    ring.classList.remove('filling');
+    ring.classList.add('active');
+    void ring.querySelector('circle').getBoundingClientRect(); 
+    setTimeout(()=>ring.classList.add('filling'), 20);
+
+    lpTimer=setTimeout(()=>{
+      if(!isSwiping && !isScrolling){
+        lpFired=true;
+        row.classList.remove('pressing');
+        ring.classList.remove('active','filling');
+        navigator.vibrate&&navigator.vibrate([12,8,12]);
+        decrement(id);
+      }
+    }, 520);
+  });
+
+  row.addEventListener('pointermove', e=>{
+    // NEW: If the mouse isn't clicked down, ignore the movement completely!
+    if(!isPointerDown) return; 
+    if(isScrolling) return;
+
+    const dx=e.clientX-x0, dy=e.clientY-y0;
+    
+    if(!isSwiping && !isScrolling && (Math.abs(dx)>5 || Math.abs(dy)>5)){
+      clearTimeout(lpTimer);
+      const ring=document.getElementById('ring-'+id);
+      if(ring) ring.classList.remove('active','filling');
+      row.classList.remove('pressing');
+      
+      if(Math.abs(dy) > Math.abs(dx)){
+        isScrolling = true;
+      } else {
+        isSwiping = true;
+      }
+    }
+
+    if(isSwiping){
+      const base = isOpen ? -120 : 0;
+      const tx = Math.max(-120, Math.min(0, base+dx));
+      row.style.transform=`translateX(${tx}px)`;
+      curTx=tx;
+      e.preventDefault();
+    }
+  },{passive:false});
+
+  row.addEventListener('pointerup', e=>{
+    if(!isPointerDown) return;
+    isPointerDown = false; // Release the lock
+    row.releasePointerCapture(e.pointerId);
+    
+    clearTimeout(lpTimer);
+    const ring=document.getElementById('ring-'+id);
+    if(ring) ring.classList.remove('active','filling');
+    row.classList.remove('pressing');
+
+    if(isSwiping){
+      if(curTx < -55){
+        snapOpen(id); isOpen=true; swipedId=id;
+      } else {
+        snapClose(id); isOpen=false;
+      }
+      return;
+    }
+    
+    const dx=e.clientX-x0, dy=e.clientY-y0;
+    if(!lpFired && !isScrolling && Math.abs(dx)<5 && Math.abs(dy)<5){
+      increment(id);
+    }
+  });
+
+  row.addEventListener('pointercancel', e=>{
+    isPointerDown = false; // Release the lock
+    row.releasePointerCapture(e.pointerId);
+    
+    clearTimeout(lpTimer);
+    const ring=document.getElementById('ring-'+id);
+    if(ring) ring.classList.remove('active','filling');
+    row.classList.remove('pressing');
+    
+    if (!isOpen) {
+      row.style.transition = ''; 
+      row.style.transform = 'translateX(0)';
+    } else {
+      snapClose(id); isOpen=false;
+    }
+  });
+}
+
+
+// ── INCREMENT / DECREMENT ────────────────────────
+function increment(id){
+  const data = getDay(active);
+  data[id] = (data[id] || 0) + 1;
+  if(!data._ts) data._ts={};
+  data._ts[id] = Date.now();
+
+  const cat = CATS.find(c => c.id === id);
+  if (cat && cat.parent) {
+    data[cat.parent] = (data[cat.parent] || 0) + 1;
+    data._ts[cat.parent] = Date.now();
+    refreshRow(cat.parent, data[cat.parent], data._ts[cat.parent]);
+    flashRow(cat.parent, 'inc');
+  }
+
+  db[active] = data; persist();
+  refreshRow(id, data[id], data._ts[id]);
+  flashRow(id, 'inc');
+  navigator.vibrate && navigator.vibrate(8);
+  updateBanner();
+  buildDateBar();
+}
+
+function decrement(id){
+  const data = getDay(active);
+  if (!(data[id] > 0)) return;
+  data[id]--;
+  if(!data._ts) data._ts={};
+  data._ts[id] = Date.now();
+
+  const cat = CATS.find(c => c.id === id);
+  if (cat && cat.parent && data[cat.parent] > 0) {
+    data[cat.parent]--;
+    data._ts[cat.parent] = Date.now();
+    refreshRow(cat.parent, data[cat.parent], data._ts[cat.parent]);
+    flashRow(cat.parent, 'dec');
+  }
+
+  db[active] = data; persist();
+  refreshRow(id, data[id], data._ts[id]);
+  flashRow(id, 'dec');
+  updateBanner();
+  buildDateBar();
+  snapClose(id);
+}
+
+// ── FIXED: Clear timestamp when resetting a row ──
+function resetCat(id){
+  const data=getDay(active);
+  data[id]=0;
+  if(data._ts) delete data._ts[id]; 
+  db[active]=data; persist();
+  refreshRow(id, 0, null); 
+  updateBanner();
+  buildDateBar();
+  snapClose(id);
+}
+
+// ── FIXED: Clear text content if timestamp is null ──
+function refreshRow(id, val, ts){
+  const el=document.getElementById('val-'+id);
+  if(!el)return;
+  el.textContent=val;
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+  
+  const tsEl=document.getElementById('ts-'+id);
+  if(tsEl) {
+    tsEl.textContent = ts ? fmtTs(ts) : ''; 
+  }
+  
+  const mx=globalMax()||1;
+  CATS.forEach(c=>{
+    const v=parseInt(document.getElementById('val-'+c.id)?.textContent)||0;
+    const f=document.getElementById('prog-'+c.id);
+    if(f) f.style.width=(v/mx*100)+'%';
+  });
+}
+
+function flashRow(id, type){
+  const row=document.getElementById('row-'+id);
+  if(!row)return;
+  row.classList.add(type==='inc'?'fl-inc':'fl-dec');
+  setTimeout(()=>row.classList.remove('fl-inc','fl-dec'),180);
+}
+
+// ── BANNER ──────────────────────────────────────
+function updateBanner(){}
+
+// ── SAVE / RESET ─────────────────────────────────
+function saveDay(){
+  persist();
+  buildDateBar();
+  showToast('✓ Saved · '+fmtFull(active));
+}
+function resetDay(){
+  if(!confirm('Reset ALL counts for '+fmtFull(active)+'?')) return;
+  delete db[active]; persist();
+  renderList(); buildDateBar();
+  showToast('Day reset');
+}
+
+// ── MONTHLY SHEET ────────────────────────────────
+function openSheet(){
+  activeMonth=monthOf(active);
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+  buildMPicker(); buildTable();
+}
+function closeSheet(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+}
+function buildMPicker(){
+  const p=document.getElementById('mPicker'); p.innerHTML='';
+  const months=new Set([activeMonth]);
+  Object.keys(db).forEach(ds=>months.add(monthOf(ds)));
+  [...months].sort().reverse().forEach(ym=>{
+    const ch=document.createElement('div');
+    ch.className='mchip'+(ym===activeMonth?' active':'');
+    ch.textContent=fmtMonth(ym);
+    ch.onclick=()=>{activeMonth=ym;buildMPicker();buildTable();};
+    p.appendChild(ch);
+  });
+}
+function buildTable(){
+  const[y,m]=activeMonth.split('-').map(Number);
+  const days=new Date(y,m,0).getDate();
+  document.getElementById('shTitle').textContent=fmtMonth(activeMonth);
+
+  const getInitials = (label) => {
+    const words = label.split(/[\s-]+/);
+    if (words.length > 1) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return words[0].substring(0, 2).toUpperCase();
+  };
+
+  document.getElementById('tHead').innerHTML=
+    `<tr><th>Date</th>${CATS.map(c=>`<th>${getInitials(c.label)}</th>`).join('')}<th>∑</th></tr>`;
+
+  const body=document.getElementById('tBody'); body.innerHTML='';
+  const colTot=Object.fromEntries(CATS.map(c=>[c.id,0]));
+  let grand=0; const t=todayStr();
+
+  for(let day=1;day<=days;day++){
+    const ds=`${y}-${p2(m)}-${p2(day)}`;
+    const data=getDay(ds);
+    const rowSum=CATS.reduce((s,c)=>s+(data[c.id]||0),0);
+    grand+=rowSum;
+    CATS.forEach(c=>colTot[c.id]+=(data[c.id]||0));
+    const tr=document.createElement('tr');
+    if(ds===t) tr.className='tr-today';
+    const dl=parseDs(ds).toLocaleDateString('en-IN',{weekday:'short',day:'numeric'});
+    tr.innerHTML=`<td>${dl}</td>`+
+      CATS.map(c=>{const v=data[c.id]||0;return`<td class="${v?'':'z'}">${v||'·'}</td>`;}).join('')+
+      `<td><b>${rowSum||'·'}</b></td>`;
+    tr.onclick=()=>{closeSheet();selectDate(ds);};
+    body.appendChild(tr);
+  }
+  const foot=document.createElement('tr');
+  foot.className='tr-tot';
+  foot.innerHTML=`<td>Total</td>`+
+    CATS.map(c=>`<td>${colTot[c.id]||0}</td>`).join('')+
+    `<td>${grand}</td>`;
+  body.appendChild(foot);
+}
+
+// ── TOAST ───────────────────────────────────────
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ── SYNC STATUS UI ──────────────────────────────
+function updateSyncStatus(status) {
+  const el = document.getElementById('syncText');
+  const dot = document.getElementById('syncDot');
+  if (!el || !dot) return;
+
+  if (status === 'syncing') {
+    el.textContent = 'Syncing...';
+    dot.className = 'sync-dot syncing';
+  } else if (status === 'success') {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    el.textContent = `Last synced: ${timeStr}`;
+    dot.className = 'sync-dot online';
+  } else if (status === 'error') {
+    el.textContent = 'Offline - Saved Locally';
+    dot.className = 'sync-dot error';
+  }
+}
+
+// ── AUTO-SYNC (9 AM to 5 PM IST) ─────────────────
+let lastSyncTime = 0;
+const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+function isWorkingHoursIST() {
+  const formatter = new Intl.DateTimeFormat('en-US', { 
+    timeZone: 'Asia/Kolkata', 
+    hour: 'numeric', 
+    hourCycle: 'h23' 
+  });
+  const currentHourIST = parseInt(formatter.format(new Date()), 10);
+  return currentHourIST >= 9 && currentHourIST < 17;
+}
+
+async function silentSync() {
+  // Prevent sync if outside working hours, too soon, or currently saving
+  if (!isWorkingHoursIST()) return;
+  const now = Date.now();
+  if (now - lastSyncTime < 30000) return; 
+  if (saveTimeout) return; 
+
+  // We passed the checks, update the UI to show syncing is starting
+  updateSyncStatus('syncing');
+
+  try {
+    const res = await fetch(WORKER_URL);
+    if (res.ok) {
+      const cloudData = await res.json();
+      
+      // Check if data actually changed before forcing a UI re-render
+      if (JSON.stringify(db) !== JSON.stringify(cloudData)) {
+        db = cloudData;
+        localStorage.setItem(STORE, JSON.stringify(db));
+        
+        renderList();
+        buildDateBar();
+      }
+      
+      lastSyncTime = Date.now();
+      updateSyncStatus('success'); 
+    } else {
+      throw new Error("Failed to fetch cloud data");
+    }
+  } catch (err) {
+    console.error("Silent sync failed", err);
+    updateSyncStatus('error'); 
+  }
+}
+
+// 1. Run when the app is just sitting open on the desk
+setInterval(() => {
+  const now = Date.now();
+  if (now - lastSyncTime >= SYNC_INTERVAL_MS) {
+    silentSync();
+  }
+}, 60000); 
+
+// 2. Run instantly when iOS brings the app back to the foreground
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    silentSync();
+  }
+});
+
+// ── INIT ─────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('SW registered'))
+      .catch(err => console.error('SW failed', err));
+  });
+}
+  
+load(); // Boot the app!
+</script>
+
+</body>
+</html>

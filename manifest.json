@@ -1,0 +1,15 @@
+{
+  "name": "OPD STATS",
+  "short_name": "OPD STATS",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#007AFF",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;charset=utf-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%23007AFF'/><text x='50%25' y='53%25' font-size='220' font-weight='bold' font-family='sans-serif' fill='%23FFFFFF' text-anchor='middle' dominant-baseline='middle'>OPD</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
